@@ -1,0 +1,303 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: Student Management System REST API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: students
+    description: Student record operations
+  - name: dashboard
+    description: Student dashboard summary operations
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /students/:
+    get:
+      operationId: listStudents
+      tags: [students]
+      summary: List students
+      description: Returns all student records, optionally filtered by name, email, or department.
+      parameters:
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: ordering
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [id, name, department, year, cgpa]
+            default: id
+      responses:
+        "200":
+          description: Student list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Student"
+    post:
+      operationId: createStudent
+      tags: [students]
+      summary: Create student
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StudentInput"
+      responses:
+        "201":
+          description: Created student
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Student"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /students/{id}/:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+    get:
+      operationId: getStudent
+      tags: [students]
+      summary: Get student
+      responses:
+        "200":
+          description: Student record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Student"
+        "404":
+          description: Student not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    put:
+      operationId: updateStudent
+      tags: [students]
+      summary: Replace student
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StudentInput"
+      responses:
+        "200":
+          description: Updated student
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Student"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Student not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: patchStudent
+      tags: [students]
+      summary: Partially update student
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StudentUpdate"
+      responses:
+        "200":
+          description: Updated student
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Student"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Student not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteStudent
+      tags: [students]
+      summary: Delete student
+      responses:
+        "204":
+          description: Student deleted
+        "404":
+          description: Student not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /dashboard/summary/:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get dashboard summary
+      description: Returns aggregate statistics for the current student records.
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+    Student:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        department:
+          type: string
+        year:
+          type: integer
+          minimum: 1
+          maximum: 4
+        cgpa:
+          type: number
+          minimum: 0
+          maximum: 10
+      required: [id, name, email, phone, department, year, cgpa]
+    StudentInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+          minLength: 7
+        department:
+          type: string
+          minLength: 1
+        year:
+          type: integer
+          minimum: 1
+          maximum: 4
+        cgpa:
+          type: number
+          minimum: 0
+          maximum: 10
+      required: [name, email, phone, department, year, cgpa]
+    StudentUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+          minLength: 7
+        department:
+          type: string
+          minLength: 1
+        year:
+          type: integer
+          minimum: 1
+          maximum: 4
+        cgpa:
+          type: number
+          minimum: 0
+          maximum: 10
+    DepartmentSummary:
+      type: object
+      properties:
+        name:
+          type: string
+        count:
+          type: integer
+      required: [name, count]
+    DashboardSummary:
+      type: object
+      properties:
+        totalStudents:
+          type: integer
+        departmentCount:
+          type: integer
+        averageCgpa:
+          type: number
+        topDepartment:
+          type: ["string", "null"]
+        departments:
+          type: array
+          items:
+            $ref: "#/components/schemas/DepartmentSummary"
+      required: [totalStudents, departmentCount, averageCgpa, topDepartment, departments]
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        detail:
+          type: object
+          additionalProperties: true
+      required: [error]
+
